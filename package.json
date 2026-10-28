@@ -1,0 +1,67 @@
+{
+  "name": "keep-terminal",
+  "displayName": "Keep Terminal",
+  "description": "Restore your terminals (names and working directories) when a VS Code workspace is reopened.",
+  "version": "0.1.0",
+  "publisher": "local",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.93.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "keepTerminal.restore",
+        "title": "Keep Terminal: Restore Saved Terminals"
+      },
+      {
+        "command": "keepTerminal.clear",
+        "title": "Keep Terminal: Forget Saved Terminals"
+      },
+      {
+        "command": "keepTerminal.applyRecommendedSettings",
+        "title": "Keep Terminal: Apply Recommended Built-in Terminal Settings"
+      }
+    ],
+    "configuration": {
+      "title": "Keep Terminal",
+      "properties": {
+        "keepTerminal.autoRestore": {
+          "type": "boolean",
+          "default": true,
+          "description": "On startup, recreate saved terminals that VS Code did not restore itself."
+        },
+        "keepTerminal.suggestBuiltinSettings": {
+          "type": "boolean",
+          "default": true,
+          "description": "On startup, offer to configure VS Code's built-in terminal persistence, which also restores split layout, colors and icons."
+        },
+        "keepTerminal.restoreDelayMs": {
+          "type": "number",
+          "default": 2000,
+          "minimum": 0,
+          "description": "How long no new terminal must appear on startup before restoring, so VS Code's own terminal revive finishes first."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "test": "npm run compile && node --test \"out/test/**/*.test.js\"",
+    "package": "vsce package --allow-missing-repository --skip-license"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.0",
+    "@types/vscode": "^1.93.0",
+    "@vscode/vsce": "^3.2.0",
+    "typescript": "^5.6.3"
+  }
+}
