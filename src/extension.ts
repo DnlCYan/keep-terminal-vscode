@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as vscode from 'vscode';
-import { SavedTerminal, isCustomName, planRestore, sameSnapshot } from './snapshot';
+import { SavedTerminal, isCustomName, msysToWindowsPath, planRestore, sameSnapshot } from './snapshot';
 
 const STORAGE_KEY = 'keepTerminal.terminals';
 const DONT_SUGGEST_KEY = 'keepTerminal.dontSuggestBuiltinSettings';
@@ -88,13 +88,25 @@ export function activate(context: vscode.ExtensionContext): void {
 
 export function deactivate(): void { }
 
+/** Shells like Fish under MSYS2 report "/c/..." paths, which Windows can't open as-is. */
+function existingCwd(cwd: string | undefined): string | undefined {
+	if (!cwd) {
+		return undefined;
+	}
+	if (fs.existsSync(cwd)) {
+		return cwd;
+	}
+	const converted = process.platform === 'win32' ? msysToWindowsPath(cwd) : undefined;
+	return converted && fs.existsSync(converted) ? converted : undefined;
+}
+
 function restore(context: vscode.ExtensionContext): void {
 	const saved = context.workspaceState.get<SavedTerminal[]>(STORAGE_KEY, []);
 	const openNames = vscode.window.terminals.filter(t => !('pty' in t.creationOptions)).map(t => t.name);
 	for (const terminal of planRestore(saved, openNames)) {
 		vscode.window.createTerminal({
 			name: terminal.customName,
-			cwd: terminal.cwd && fs.existsSync(terminal.cwd) ? terminal.cwd : undefined,
+			cwd: existingCwd(terminal.cwd),
 			shellPath: terminal.shellPath,
 			shellArgs: terminal.shellArgs,
 		});

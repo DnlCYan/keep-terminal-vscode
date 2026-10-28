@@ -1,6 +1,6 @@
 import * as assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { isCustomName, planRestore, shellTitle } from '../snapshot';
+import { isCustomName, msysToWindowsPath, planRestore, shellTitle } from '../snapshot';
 
 test('shellTitle strips directory and .exe', () => {
 	assert.equal(shellTitle('C:\\Program Files\\PowerShell\\7\\pwsh.exe'), 'pwsh');
@@ -29,4 +29,23 @@ test('planRestore lets renamed terminals claim their name before unnamed ones ta
 	const saved = [{}, { customName: 'api' }, { customName: 'web' }];
 	// "api" was revived; the fresh default "pwsh" covers the unnamed one; "web" is missing.
 	assert.deepEqual(planRestore(saved, ['api', 'pwsh']), [{ customName: 'web' }]);
+});
+
+test('planRestore does not duplicate revived terminals whose saved name was a program title', () => {
+	const saved = [{}, { customName: '✳ plan-ticket-skill' }, { customName: '✳ statusline' }];
+	// VS Code revived all three, but the program-set titles are gone.
+	assert.deepEqual(planRestore(saved, ['fish', 'bash', 'fish']), []);
+});
+
+test('planRestore still recreates terminals beyond those revived', () => {
+	const saved = [{ customName: '✳ task' }, { customName: 'web' }, {}];
+	assert.deepEqual(planRestore(saved, ['fish', 'web']), [{ customName: '✳ task' }]);
+});
+
+test('msysToWindowsPath converts drive-letter MSYS paths only', () => {
+	assert.equal(msysToWindowsPath('/c/@Projects/Resume'), 'C:\\@Projects\\Resume');
+	assert.equal(msysToWindowsPath('\\c\\@Projects\\Resume'), 'C:\\@Projects\\Resume');
+	assert.equal(msysToWindowsPath('/d'), 'D:\\');
+	assert.equal(msysToWindowsPath('c:\\@Projects'), undefined);
+	assert.equal(msysToWindowsPath('/home/me'), undefined);
 });

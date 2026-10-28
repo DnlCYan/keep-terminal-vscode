@@ -29,6 +29,8 @@ export function isCustomName(name: string, shellPath: string | undefined): boole
  * Returns the saved terminals that have no counterpart among the terminals already open
  * (for example, the ones VS Code revived itself), preserving the saved order.
  * Renamed terminals claim an open terminal with the same name first; the rest claim any leftover.
+ * A saved name may be a title a program set (e.g. Claude Code's "✳ task") that is gone after revive,
+ * so renamed terminals without a name match also claim leftovers before being recreated.
  */
 export function planRestore(saved: SavedTerminal[], openNames: string[]): SavedTerminal[] {
 	const remaining = openNames.map(n => n.trim().toLowerCase());
@@ -47,7 +49,18 @@ export function planRestore(saved: SavedTerminal[], openNames: string[]): SavedT
 			matched[i] = claim(() => true);
 		}
 	});
+	saved.forEach((_, i) => {
+		if (!matched[i]) {
+			matched[i] = claim(() => true);
+		}
+	});
 	return saved.filter((_, i) => !matched[i]);
+}
+
+/** Turns an MSYS/Git Bash style path ("/c/foo" or "\c\foo") into a Windows one ("C:\foo"). */
+export function msysToWindowsPath(p: string): string | undefined {
+	const match = /^[\\/]([a-zA-Z])(?:[\\/](.*))?$/.exec(p);
+	return match ? `${match[1].toUpperCase()}:\\${(match[2] ?? '').replace(/\//g, '\\')}` : undefined;
 }
 
 export function sameSnapshot(a: SavedTerminal[], b: SavedTerminal[]): boolean {
